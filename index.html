@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>User Manager</title>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #f2f3f7;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background: #0078ff;
+            color: white;
+            text-align: center;
+            padding: 15px 0;
+            font-size: 24px;
+            letter-spacing: 1px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        main {
+            max-width: 600px;
+            margin: 40px auto;
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+        }
+        form {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        input {
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            flex: 1;
+        }
+        button {
+            background: #0078ff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:hover {
+            background: #005fcc;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            background: #f9f9f9;
+            margin: 8px 0;
+            padding: 10px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .actions button {
+            margin-left: 5px;
+            background: #ff4b4b;
+        }
+        .actions button.edit {
+            background: #00c853;
+        }
+        .actions button:hover {
+            opacity: 0.8;
+        }
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #777;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <header>👥 Local User Manager</header>
+    <main>
+        <h2>Manage Users</h2>
+        <form id="userForm">
+            <input type="text" id="nameInput" placeholder="Enter name..." required />
+            <button type="submit">Add User</button>
+        </form>
+        <ul id="userList"></ul>
+    </main>
+    <footer>Made with ❤️ using PHP + HTML + JS</footer>
+
+    <script>
+        const baseUrl = "http://localhost:8080"; // Backend base URL
+        const userList = document.getElementById("userList");
+        const userForm = document.getElementById("userForm");
+        const nameInput = document.getElementById("nameInput");
+
+        // 🟢 Load users
+        async function loadUsers() {
+            userList.innerHTML = "<li>Loading...</li>";
+            const res = await fetch(`${baseUrl}/users`);
+            const users = await res.json();
+
+            userList.innerHTML = "";
+            users.forEach(user => {
+                const li = document.createElement("li");
+                li.innerHTML = `
+                    <span>${user.id}. ${user.name}</span>
+                    <div class="actions">
+                        <button class="edit" onclick="editUser(${user.id}, '${user.name}')">✏️</button>
+                        <button onclick="deleteUser(${user.id})">🗑️</button>
+                    </div>
+                `;
+                userList.appendChild(li);
+            });
+        }
+
+        // 🟡 Add user
+        userForm.addEventListener("submit", async e => {
+            e.preventDefault();
+            const name = nameInput.value.trim();
+            if (!name) return;
+
+            await fetch(`${baseUrl}/users`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name })
+            });
+
+            nameInput.value = "";
+            loadUsers();
+        });
+
+        // 🟠 Edit user
+        async function editUser(id, oldName) {
+            const newName = prompt("Edit name:", oldName);
+            if (!newName) return;
+
+            await fetch(`${baseUrl}/users/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name: newName })
+            });
+
+            loadUsers();
+        }
+
+        // 🔴 Delete user
+        async function deleteUser(id) {
+            if (!confirm("Are you sure you want to delete this user?")) return;
+
+            await fetch(`${baseUrl}/users/${id}`, { method: "DELETE" });
+            loadUsers();
+        }
+
+        // Initialize
+        loadUsers();
+    </script>
+</body>
+</html>
